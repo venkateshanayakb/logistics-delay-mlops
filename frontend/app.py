@@ -16,9 +16,9 @@ import requests
 import streamlit as st
 
 # ── Config ───────────────────────────────────────────────────────
-def normalize_api_url(raw_api_url: str) -> str:
-    """Normalize API URL across local and Render deployments."""
-    candidate = (raw_api_url or "").strip().rstrip("/")
+API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
+if API_URL and not API_URL.startswith(("http://", "https://")):
+    API_URL = f"https://{API_URL}"
 
     if not candidate:
         return "http://localhost:8000"
@@ -153,7 +153,7 @@ if not api_live:
         "⚠️ **API not ready.**\n\n"
         f"Configured `API_URL`: `{API_URL}`\n\n"
         f"Details: `{api_error}`\n\n"
-        "Render tip: set frontend `API_URL` to the backend full URL (for example `https://logistics-api-xxxx.onrender.com`)."
+        "If you are deploying on Render, confirm the frontend `API_URL` env var points to your API service URL."
     )
     st.stop()
 
