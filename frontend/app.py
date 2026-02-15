@@ -9,16 +9,38 @@ Run:
 
 import os
 import time
+from urllib.parse import urlparse
 
 import plotly.graph_objects as go
 import requests
 import streamlit as st
 
 # ── Config ───────────────────────────────────────────────────────
-API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
-if API_URL and not API_URL.startswith("http"):
-    API_URL = f"https://{API_URL}"
+def normalize_api_url(raw_api_url: str) -> str:
+    """Normalize API URL across local and Render deployments."""
+    candidate = (raw_api_url or "").strip().rstrip("/")
 
+    if not candidate:
+        return "http://localhost:8000"
+
+    if not candidate.startswith(("http://", "https://")):
+        # Render can sometimes expose short host values like `logistics-api-xxxx`.
+        if "." not in candidate and candidate not in {"localhost", "127.0.0.1"}:
+            candidate = f"{candidate}.onrender.com"
+        candidate = f"https://{candidate}"
+
+    parsed = urlparse(candidate)
+    if parsed.scheme in {"http", "https"} and parsed.hostname and "." not in parsed.hostname:
+        if parsed.hostname not in {"localhost", "127.0.0.1"}:
+            host = f"{parsed.hostname}.onrender.com"
+            port = f":{parsed.port}" if parsed.port else ""
+            path = parsed.path or ""
+            candidate = f"{parsed.scheme}://{host}{port}{path}"
+
+    return candidate
+
+
+API_URL = normalize_api_url(os.environ.get("API_URL", "http://localhost:8000"))
 print(f"🚀 DEBUG: Frontend connecting to API_URL: '{API_URL}'")
 
 st.set_page_config(
@@ -96,27 +118,42 @@ st.markdown("""
 
 # ── API health check ────────────────────────────────────────────
 def check_api():
-    """Check API health with retries for cold starts."""
-    for i in range(5):  # Try 5 times (5x5s = 25s max wait)
+    """Check API health with retries and return status details."""
+    max_attempts = 12  # free tier cold starts can take ~1 min
+    for i in range(max_attempts):
         try:
             r = requests.get(f"{API_URL}/health", timeout=5)
-            if r.status_code == 200 and r.json().get("model_loaded", False):
-                return True
-        except Exception:
-            pass
-        
-        # If initializing, wait a bit
-        if i < 4:
-            with st.spinner(f"Waking up API... (Attempt {i+1}/5)"):
-                time.sleep(2)
-    return False
+            if r.status_code != 200:
+                raise RuntimeError(f"Health endpoint returned {r.status_code}")
+
+            payload = r.json()
+            if payload.get("model_loaded", False):
+                return True, None
+
+            # API is reachable but model is still warming up.
+            if i < max_attempts - 1:
+                with st.spinner(f"API reachable, model loading... (Attempt {i+1}/{max_attempts})"):
+                    time.sleep(5)
+                continue
+            return False, "API is reachable, but model is still loading. Check backend logs and MODEL_PATH."
+
+        except Exception as exc:
+            if i < max_attempts - 1:
+                with st.spinner(f"Waking up API... (Attempt {i+1}/{max_attempts})"):
+                    time.sleep(5)
+                continue
+            return False, str(exc)
+
+    return False, "Unknown API startup issue"
 
 
-api_live = check_api()
+api_live, api_error = check_api()
 if not api_live:
     st.error(
-        "⚠️ **API not reachable.** Start it first:\n\n"
-        "```bash\npython -m uvicorn api.main:app --port 8000\n```"
+        "⚠️ **API not ready.**\n\n"
+        f"Configured `API_URL`: `{API_URL}`\n\n"
+        f"Details: `{api_error}`\n\n"
+        "Render tip: set frontend `API_URL` to the backend full URL (for example `https://logistics-api-xxxx.onrender.com`)."
     )
     st.stop()
 
