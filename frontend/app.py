@@ -16,7 +16,7 @@ import streamlit as st
 
 # ── Config ───────────────────────────────────────────────────────
 API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
-if API_URL and not API_URL.startswith("http"):
+if API_URL and not API_URL.startswith(("http://", "https://")):
     API_URL = f"https://{API_URL}"
 
 print(f"🚀 DEBUG: Frontend connecting to API_URL: '{API_URL}'")
@@ -96,27 +96,42 @@ st.markdown("""
 
 # ── API health check ────────────────────────────────────────────
 def check_api():
-    """Check API health with retries for cold starts."""
-    for i in range(5):  # Try 5 times (5x5s = 25s max wait)
+    """Check API health with retries and return status details."""
+    max_attempts = 12  # free tier cold starts can take ~1 min
+    for i in range(max_attempts):
         try:
             r = requests.get(f"{API_URL}/health", timeout=5)
-            if r.status_code == 200 and r.json().get("model_loaded", False):
-                return True
-        except Exception:
-            pass
-        
-        # If initializing, wait a bit
-        if i < 4:
-            with st.spinner(f"Waking up API... (Attempt {i+1}/5)"):
-                time.sleep(2)
-    return False
+            if r.status_code != 200:
+                raise RuntimeError(f"Health endpoint returned {r.status_code}")
+
+            payload = r.json()
+            if payload.get("model_loaded", False):
+                return True, None
+
+            # API is reachable but model is still warming up.
+            if i < max_attempts - 1:
+                with st.spinner(f"API reachable, model loading... (Attempt {i+1}/{max_attempts})"):
+                    time.sleep(5)
+                continue
+            return False, "API is reachable, but model is still loading. Check backend logs and MODEL_PATH."
+
+        except Exception as exc:
+            if i < max_attempts - 1:
+                with st.spinner(f"Waking up API... (Attempt {i+1}/{max_attempts})"):
+                    time.sleep(5)
+                continue
+            return False, str(exc)
+
+    return False, "Unknown API startup issue"
 
 
-api_live = check_api()
+api_live, api_error = check_api()
 if not api_live:
     st.error(
-        "⚠️ **API not reachable.** Start it first:\n\n"
-        "```bash\npython -m uvicorn api.main:app --port 8000\n```"
+        "⚠️ **API not ready.**\n\n"
+        f"Configured `API_URL`: `{API_URL}`\n\n"
+        f"Details: `{api_error}`\n\n"
+        "If you are deploying on Render, confirm the frontend `API_URL` env var points to your API service URL."
     )
     st.stop()
 
