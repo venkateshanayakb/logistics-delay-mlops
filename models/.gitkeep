@@ -1,0 +1,3 @@
+# This file ensures the models/ directory is tracked by Git
+# even though *.joblib and *.pkl files are gitignored.
+# The Docker build and CI pipelines need this directory to exist.

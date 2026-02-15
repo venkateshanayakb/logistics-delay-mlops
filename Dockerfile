@@ -21,7 +21,10 @@ COPY --from=builder /install /usr/local
 # Copy application code
 COPY api/ api/
 COPY src/ src/
-COPY models/ models/
+
+# Create models dir (model artifact is mounted at runtime or baked in separately)
+RUN mkdir -p models
+COPY models/.gitkeep models/.gitkeep
 
 # Expose API port
 EXPOSE 8000
