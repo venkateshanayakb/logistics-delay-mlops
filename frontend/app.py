@@ -19,6 +19,8 @@ API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
 if API_URL and not API_URL.startswith("http"):
     API_URL = f"https://{API_URL}"
 
+print(f"🚀 DEBUG: Frontend connecting to API_URL: '{API_URL}'")
+
 st.set_page_config(
     page_title="Logistics Delay Predictor",
     page_icon="📦",
