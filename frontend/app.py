@@ -9,17 +9,42 @@ Run:
 
 import os
 import time
+from urllib.parse import urlparse
 
 import plotly.graph_objects as go
 import requests
 import streamlit as st
 
 # ── Config ───────────────────────────────────────────────────────
+def normalize_api_url(raw_api_url: str) -> str:
+    """Normalize API URL across local and Render deployments."""
+    candidate = (raw_api_url or "").strip().rstrip("/")
 API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
 if API_URL and not API_URL.startswith(("http://", "https://")):
     API_URL = f"https://{API_URL}"
 
-print(f"🚀 DEBUG: Frontend connecting to API_URL: '{API_URL}'")
+    if not candidate:
+        return "http://localhost:8000"
+
+    if not candidate.startswith(("http://", "https://")):
+        # Render can sometimes expose short host values like `logistics-api-xxxx`.
+        if "." not in candidate and candidate not in {"localhost", "127.0.0.1"}:
+            candidate = f"{candidate}.onrender.com"
+        candidate = f"https://{candidate}"
+
+    parsed = urlparse(candidate)
+    if parsed.scheme in {"http", "https"} and parsed.hostname and "." not in parsed.hostname:
+        if parsed.hostname not in {"localhost", "127.0.0.1"}:
+            host = f"{parsed.hostname}.onrender.com"
+            port = f":{parsed.port}" if parsed.port else ""
+            path = parsed.path or ""
+            candidate = f"{parsed.scheme}://{host}{port}{path}"
+
+    return candidate
+
+
+RAW_API_URL = os.environ.get("API_URL", "http://localhost:8000")
+API_URL = normalize_api_url(RAW_API_URL)
 
 st.set_page_config(
     page_title="Logistics Delay Predictor",
@@ -127,9 +152,18 @@ def check_api():
 
 api_live, api_error = check_api()
 if not api_live:
+    normalization_note = ""
+    raw_value = (RAW_API_URL or "").strip()
+    if raw_value and raw_value.rstrip("/") != API_URL:
+        normalization_note = f"Normalized from `API_URL={raw_value}` to `{API_URL}`.\n\n"
+
     st.error(
         "⚠️ **API not ready.**\n\n"
         f"Configured `API_URL`: `{API_URL}`\n\n"
+        f"{normalization_note}"
+        f"Details: `{api_error}`\n\n"
+        "If you are deploying on Render, confirm the frontend `API_URL` env var points to your API service URL "
+        "(for example `https://logistics-api-xxxx.onrender.com`)."
         f"Details: `{api_error}`\n\n"
         "If you are deploying on Render, confirm the frontend `API_URL` env var points to your API service URL."
     )
