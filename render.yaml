@@ -42,7 +42,7 @@ services:
         fromService:
           name: logistics-api
           type: web
-          property: hostWithScheme # gives https://logistics-api-XXXX.onrender.com
+          property: host # gives logistics-api-XXXX.onrender.com (no scheme)
       - key: PYTHON_VERSION
         value: 3.11.7
     autoDeploy: true

@@ -16,6 +16,8 @@ import streamlit as st
 
 # ── Config ───────────────────────────────────────────────────────
 API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
+if API_URL and not API_URL.startswith("http"):
+    API_URL = f"https://{API_URL}"
 
 st.set_page_config(
     page_title="Logistics Delay Predictor",
