@@ -1,0 +1,79 @@
+# ── Docker Build & Push ─────────────────────────────────────────
+# Build the API Docker image and push to GitHub Container Registry.
+# Triggers on push to main that touches Docker-relevant files.
+
+name: Docker Build & Push
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - "Dockerfile"
+            - "api/**"
+            - "src/**"
+            - "models/**"
+            - "requirements-docker.txt"
+    workflow_dispatch: # Allow manual trigger
+
+env:
+    REGISTRY: ghcr.io
+    IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+    build-and-push:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Log in to GitHub Container Registry
+              uses: docker/login-action@v3
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Extract metadata (tags, labels)
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  tags: |
+                      type=sha,prefix=
+                      type=raw,value=latest,enable={{is_default_branch}}
+
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+
+            # ── Smoke test: spin up the image and hit /health ──
+            - name: Smoke test — container health check
+              run: |
+                  echo "Starting container for smoke test..."
+                  docker run -d --name smoke-test \
+                    -p 8000:8000 \
+                    ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+                  echo "Waiting for container to become healthy..."
+                  for i in $(seq 1 30); do
+                    if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+                      echo "✅ Health check passed!"
+                      docker logs smoke-test
+                      docker stop smoke-test && docker rm smoke-test
+                      exit 0
+                    fi
+                    sleep 2
+                  done
+
+                  echo "❌ Health check failed after 60s"
+                  docker logs smoke-test
+                  docker stop smoke-test && docker rm smoke-test
+                  exit 1

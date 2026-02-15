@@ -1,0 +1,36 @@
+# ── Data Layer ──
+pandas==2.2.3
+numpy==2.2.3
+psycopg2-binary==2.9.10
+sqlalchemy==2.0.38
+python-dotenv==1.0.1
+
+# ── ML & Training ──
+scikit-learn==1.6.1
+scikit-optimize==0.10.2
+joblib==1.4.2
+shap==0.46.0
+imbalanced-learn==0.13.0
+
+# ── Experiment Tracking ──
+wandb==0.19.6
+
+# ── API ──
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+pydantic==2.10.6
+
+# ── Monitoring ──
+prometheus-client==0.22.0
+evidently==0.6.7
+
+# ── Frontend ──
+streamlit==1.42.0
+requests==2.32.3
+plotly==5.24.1
+
+# ── Testing & Code Quality ──
+pytest==8.3.4
+httpx==0.28.1
+flake8==7.1.2
+pylint==3.3.4

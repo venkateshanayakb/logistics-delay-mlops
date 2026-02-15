@@ -1,0 +1,35 @@
+# Virtual environment
+.venv/
+venv/
+
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Model artifacts
+models/*.joblib
+models/*.pkl
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+_temp_doc.txt
+_col_info.txt
+
+# Jupyter
+.ipynb_checkpoints/
+
+# W&B
+wandb/

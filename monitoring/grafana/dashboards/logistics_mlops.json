@@ -1,0 +1,291 @@
+{
+  "annotations": { "list": [] },
+  "description": "Logistics Delay Prediction API — Monitoring Dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "📊 Predictions per Minute",
+      "description": "Rate of predictions served by the API",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "pointSize": 5
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(predictions_total[1m]))",
+          "legendFormat": "Total",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(predictions_total{predicted_class=\"Late\"}[1m])",
+          "legendFormat": "Late",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(predictions_total{predicted_class=\"On-time\"}[1m])",
+          "legendFormat": "On-time",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(predictions_total{predicted_class=\"Early\"}[1m])",
+          "legendFormat": "Early",
+          "refId": "D"
+        }
+      ],
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "title": "⏱️ Prediction Latency (p50 / p95 / p99)",
+      "description": "Response time percentiles for the /predict endpoint",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme"
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(prediction_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(prediction_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(prediction_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ],
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "title": "🏷️ Predictions by Class",
+      "description": "Total prediction count segmented by predicted class",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Late" }, "properties": [{ "id": "color", "value": { "fixedColor": "#ff5252", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "On-time" }, "properties": [{ "id": "color", "value": { "fixedColor": "#00e676", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Early" }, "properties": [{ "id": "color", "value": { "fixedColor": "#00d2ff", "mode": "fixed" } }] }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "predictions_total",
+          "legendFormat": "{{predicted_class}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right" },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "title": "🎯 Confidence Distribution",
+      "description": "Distribution of max prediction confidence values",
+      "type": "histogram",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#7c4dff", "mode": "fixed" },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "prediction_confidence_bucket",
+          "legendFormat": "{{le}}",
+          "refId": "A",
+          "format": "heatmap"
+        }
+      ],
+      "options": {
+        "bucketSize": 0.1,
+        "fillOpacity": 80
+      }
+    },
+    {
+      "title": "📈 Total Predictions",
+      "description": "Cumulative count of all predictions served",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00d2ff", "value": null },
+              { "color": "#00e676", "value": 100 },
+              { "color": "#ff9800", "value": 1000 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(predictions_total)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value",
+        "colorMode": "background"
+      }
+    },
+    {
+      "title": "⚡ Model Load Time",
+      "description": "Time taken to load the model on API startup",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00e676", "value": null },
+              { "color": "#ff9800", "value": 5 },
+              { "color": "#ff5252", "value": 10 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "model_load_time_seconds",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value",
+        "colorMode": "background"
+      }
+    },
+    {
+      "title": "🔥 Avg Latency (30s window)",
+      "description": "Average prediction latency over the last 30 seconds",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00e676", "value": null },
+              { "color": "#ff9800", "value": 0.5 },
+              { "color": "#ff5252", "value": 2 }
+            ]
+          },
+          "min": 0,
+          "max": 5,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(prediction_latency_seconds_sum[30s]) / rate(prediction_latency_seconds_count[30s])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false
+      }
+    },
+    {
+      "title": "📊 Late Prediction Rate",
+      "description": "Percentage of predictions classified as Late",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00e676", "value": null },
+              { "color": "#ff9800", "value": 40 },
+              { "color": "#ff5252", "value": 70 }
+            ]
+          },
+          "min": 0,
+          "max": 100,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "predictions_total{predicted_class=\"Late\"} / sum(predictions_total) * 100",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["logistics", "mlops", "monitoring"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Logistics Delay — MLOps Dashboard",
+  "uid": "logistics-mlops-v1",
+  "version": 1
+}

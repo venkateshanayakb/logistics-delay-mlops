@@ -1,0 +1,56 @@
+# ── Docker Build Context Exclusions ─────────────────────────────
+# Keep the build context small and the image clean.
+
+# Version control
+.git/
+.github/
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Experiment tracking
+wandb/
+
+# Notebooks & docs
+notebooks/
+report/
+*.docx
+*.md
+
+# Frontend (not needed in API image)
+frontend/
+
+# Tests (not needed in production)
+tests/
+
+# Data files (model uses its own artifact)
+data/
+
+# Environment files
+.env
+.env.example
+
+# Temp / scratch files
+_temp_doc.txt
+_col_info.txt
+_pipeline_info.json
+*.txt
+!requirements-docker.txt
+
+# Monitoring config (separate compose)
+monitoring/

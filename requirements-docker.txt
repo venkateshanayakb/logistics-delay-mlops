@@ -1,0 +1,19 @@
+# Requirements for the FastAPI Docker image (inference only).
+# Excludes training-time deps (scikit-optimize, wandb, imbalanced-learn, etc.)
+
+pandas==2.2.3
+numpy==2.2.3
+joblib==1.4.2
+scikit-learn==1.6.1
+python-dotenv==1.0.1
+
+# API
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+pydantic==2.10.6
+
+# Monitoring
+prometheus-client==0.22.0
+
+# Explainability
+shap==0.46.0
