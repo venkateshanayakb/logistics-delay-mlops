@@ -19,9 +19,6 @@ import streamlit as st
 def normalize_api_url(raw_api_url: str) -> str:
     """Normalize API URL across local and Render deployments."""
     candidate = (raw_api_url or "").strip().rstrip("/")
-API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
-if API_URL and not API_URL.startswith(("http://", "https://")):
-    API_URL = f"https://{API_URL}"
 
     if not candidate:
         return "http://localhost:8000"
@@ -164,8 +161,6 @@ if not api_live:
         f"Details: `{api_error}`\n\n"
         "If you are deploying on Render, confirm the frontend `API_URL` env var points to your API service URL "
         "(for example `https://logistics-api-xxxx.onrender.com`)."
-        f"Details: `{api_error}`\n\n"
-        "If you are deploying on Render, confirm the frontend `API_URL` env var points to your API service URL."
     )
     st.stop()
 
@@ -400,13 +395,13 @@ if predict_btn:
                 <p style="opacity:0.65;margin-top:0.3rem">~{late_penalty_pct:.0%} of order value if delayed</p>
             </div>""", unsafe_allow_html=True)
         with bi_c2:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>💡 Recommendation</h4>
                 <p>Escalate to logistics team. Consider expedited shipping or route optimization to avoid delay.</p>
             </div>""", unsafe_allow_html=True)
         with bi_c3:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>🎯 Risk Level</h4>
                 <div class="amount" style="color:#ff5252">HIGH</div>
@@ -421,33 +416,33 @@ if predict_btn:
                 <p style="opacity:0.65;margin-top:0.3rem">Early delivery improves customer satisfaction</p>
             </div>""", unsafe_allow_html=True)
         with bi_c2:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>💡 Recommendation</h4>
                 <p>No action needed. Shipment is on track for early delivery. Consider notifying the customer.</p>
             </div>""", unsafe_allow_html=True)
         with bi_c3:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>🎯 Risk Level</h4>
                 <div class="amount" style="color:#00e676">LOW</div>
             </div>""", unsafe_allow_html=True)
     else:
         with bi_c1:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>📦 Status</h4>
                 <div class="amount" style="color:#00d2ff">ON TRACK</div>
                 <p style="opacity:0.65;margin-top:0.3rem">Shipment expected on time</p>
             </div>""", unsafe_allow_html=True)
         with bi_c2:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>💡 Recommendation</h4>
                 <p>Standard monitoring. No intervention required.</p>
             </div>""", unsafe_allow_html=True)
         with bi_c3:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>🎯 Risk Level</h4>
                 <div class="amount" style="color:#00d2ff">NORMAL</div>
