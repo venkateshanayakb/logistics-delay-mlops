@@ -94,11 +94,20 @@ st.markdown("""
 
 # ── API health check ────────────────────────────────────────────
 def check_api():
-    try:
-        r = requests.get(f"{API_URL}/health", timeout=3)
-        return r.status_code == 200 and r.json().get("model_loaded", False)
-    except Exception:
-        return False
+    """Check API health with retries for cold starts."""
+    for i in range(5):  # Try 5 times (5x5s = 25s max wait)
+        try:
+            r = requests.get(f"{API_URL}/health", timeout=5)
+            if r.status_code == 200 and r.json().get("model_loaded", False):
+                return True
+        except Exception:
+            pass
+        
+        # If initializing, wait a bit
+        if i < 4:
+            with st.spinner(f"Waking up API... (Attempt {i+1}/5)"):
+                time.sleep(2)
+    return False
 
 
 api_live = check_api()
