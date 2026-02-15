@@ -7,6 +7,7 @@ Run:
     streamlit run frontend/app.py
 """
 
+import os
 import time
 
 import plotly.graph_objects as go
@@ -14,7 +15,7 @@ import requests
 import streamlit as st
 
 # ── Config ───────────────────────────────────────────────────────
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
 
 st.set_page_config(
     page_title="Logistics Delay Predictor",

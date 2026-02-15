@@ -1,0 +1,48 @@
+# ── Render Blueprint (Infrastructure as Code) ──────────────────
+# Deploy both the FastAPI API and Streamlit frontend on Render.
+#
+# Usage:
+#   1. Push this repo to GitHub
+#   2. Go to https://dashboard.render.com → New → Blueprint
+#   3. Connect this repo → Render reads this file automatically
+#
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # ── FastAPI Backend ──────────────────────────────────────────
+  - type: web
+    name: logistics-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      pip install -r requirements-docker.txt
+    startCommand: |
+      uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MODEL_PATH
+        value: models/best_pipeline.joblib
+      - key: PYTHON_VERSION
+        value: 3.11.7
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # ── Streamlit Frontend ──────────────────────────────────────
+  - type: web
+    name: logistics-frontend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      pip install streamlit requests plotly
+    startCommand: |
+      streamlit run frontend/app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    envVars:
+      - key: API_URL
+        fromService:
+          name: logistics-api
+          type: web
+          property: hostWithScheme # gives https://logistics-api-XXXX.onrender.com
+      - key: PYTHON_VERSION
+        value: 3.11.7
+    autoDeploy: true
