@@ -96,27 +96,44 @@ st.markdown("""
 
 # ── API health check ────────────────────────────────────────────
 def check_api():
-    """Check API health with retries for cold starts."""
-    for i in range(5):  # Try 5 times (5x5s = 25s max wait)
+    """Check API health with retries for Render cold starts (up to ~2 min)."""
+    max_retries = 12  # 12 retries × 10s timeout + 5s sleep = ~3 min max
+    for i in range(max_retries):
         try:
-            r = requests.get(f"{API_URL}/health", timeout=5)
-            if r.status_code == 200 and r.json().get("model_loaded", False):
-                return True
+            r = requests.get(f"{API_URL}/health", timeout=10)
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("model_loaded", False):
+                    return True
+                # API is up but model still loading
+                st.info("API is up, waiting for model to load...")
+        except requests.exceptions.ConnectionError:
+            pass  # API not up yet
+        except requests.exceptions.Timeout:
+            pass  # API is waking up
         except Exception:
             pass
 
-        # If initializing, wait a bit
-        if i < 4:
-            with st.spinner(f"Waking up API... (Attempt {i+1}/5)"):
-                time.sleep(2)
+        # Wait between retries
+        if i < max_retries - 1:
+            with st.spinner(
+                f"⏳ Waking up API... (Attempt {i+1}/{max_retries}) "
+                f"— Render free tier can take up to 2 minutes"
+            ):
+                time.sleep(5)
     return False
 
 
 api_live = check_api()
 if not api_live:
     st.error(
-        "⚠️ **API not reachable.** Start it first:\n\n"
-        "```bash\npython -m uvicorn api.main:app --port 8000\n```"
+        f"⚠️ **API not reachable** at `{API_URL}`\\n\\n"
+        "**Possible causes:**\\n"
+        "- Render backend is still spinning up (wait 1-2 min and refresh)\\n"
+        "- Backend service crashed (check Render dashboard logs)\\n"
+        "- `API_URL` env var is misconfigured\\n\\n"
+        "**For local development:**\\n"
+        "```bash\\npython -m uvicorn api.main:app --port 8000\\n```"
     )
     st.stop()
 
