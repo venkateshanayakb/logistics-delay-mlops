@@ -98,7 +98,36 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     if "profit_per_order" in df.columns and "sales_per_customer" in df.columns:
         df["profit_margin"] = df["profit_per_order"] / df["sales_per_customer"].replace(0, np.nan)
 
-    logger.info("✅ Engineered features: date parts, shipping_lead_days, discount_ratio, profit_margin")
+    # ── Interaction features ──────────────────────────────────────
+    if "order_item_product_price" in df.columns and "order_item_quantity" in df.columns:
+        df["price_x_quantity"] = df["order_item_product_price"] * df["order_item_quantity"]
+
+    if "order_item_discount" in df.columns and "order_item_quantity" in df.columns:
+        df["discount_x_quantity"] = df["order_item_discount"] * df["order_item_quantity"]
+
+    if "sales" in df.columns and "product_price" in df.columns:
+        df["sales_to_price_ratio"] = df["sales"] / df["product_price"].replace(0, np.nan)
+
+    # ── Shipping / temporal features ──────────────────────────────
+    if "order_dayofweek" in df.columns:
+        df["is_weekend_order"] = (df["order_dayofweek"] >= 5).astype(int)
+
+    if "shipping_dayofweek" in df.columns:
+        df["is_weekend_ship"] = (df["shipping_dayofweek"] >= 5).astype(int)
+
+    if "sales" in df.columns and "shipping_lead_days" in df.columns:
+        df["shipping_speed_index"] = df["sales"] / df["shipping_lead_days"].replace(0, np.nan)
+
+    # ── Order complexity features ─────────────────────────────────
+    if "order_item_discount_rate" in df.columns:
+        df["high_discount_flag"] = (df["order_item_discount_rate"] > 0.15).astype(int)
+
+    # ── Log transforms for skewed numerics ────────────────────────
+    for col in ["sales", "product_price", "sales_per_customer", "profit_per_order"]:
+        if col in df.columns:
+            df[f"{col}_log"] = np.log1p(df[col].clip(lower=0))
+
+    logger.info("✅ Engineered features: date parts, ratios, interactions, shipping, log-transforms")
     return df
 
 
@@ -225,7 +254,7 @@ if __name__ == "__main__":
     result = prepare_data(from_csv=args.csv)
 
     print(f"\n{'='*60}")
-    print(f"  Preprocessing Complete")
+    print("  Preprocessing Complete")
     print(f"{'='*60}")
     print(f"  Train samples : {result['X_train'].shape[0]}")
     print(f"  Test  samples : {result['X_test'].shape[0]}")
@@ -234,10 +263,10 @@ if __name__ == "__main__":
     print(f"  Total features : {len(result['feature_names'])}")
 
     if args.summary:
-        print(f"\n── Numeric Features ──")
+        print("\n── Numeric Features ──")
         for col in result["numeric_cols"]:
             print(f"  {col}")
-        print(f"\n── Categorical Features ──")
+        print("\n── Categorical Features ──")
         for col in result["categorical_cols"]:
             print(f"  {col}")
 
@@ -245,4 +274,4 @@ if __name__ == "__main__":
     preprocessor = result["preprocessor"]
     X_train_transformed = preprocessor.fit_transform(result["X_train"])
     print(f"\n  Transformed shape: {X_train_transformed.shape}")
-    print(f"  ✅ Preprocessor fit_transform successful!")
+    print("  ✅ Preprocessor fit_transform successful!")

@@ -17,7 +17,6 @@ import logging
 import warnings
 
 import joblib
-import numpy as np
 import matplotlib
 matplotlib.use("Agg")  # Non-interactive backend for servers
 import matplotlib.pyplot as plt
@@ -27,7 +26,6 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
     classification_report,
     confusion_matrix,
-    roc_auc_score,
     roc_curve,
     auc,
 )
@@ -226,6 +224,7 @@ def run_evaluation(skip_shap: bool = False, from_csv: bool = False, use_wandb: b
     pipeline = load_pipeline()
     preprocessor = pipeline["preprocessor"]
     model = pipeline["model"]
+    label_encoder = pipeline.get("label_encoder", None)
 
     # ── 2. Load test data ────────────────────────────────────────
     logger.info("Step 2/5: Loading test data...")
@@ -238,12 +237,18 @@ def run_evaluation(skip_shap: bool = False, from_csv: bool = False, use_wandb: b
 
     # ── 3. Predictions ───────────────────────────────────────────
     logger.info("Step 3/5: Generating predictions...")
-    y_pred = model.predict(X_test_processed)
+    y_pred_raw = model.predict(X_test_processed)
     y_proba = (
         model.predict_proba(X_test_processed)
         if hasattr(model, "predict_proba")
         else None
     )
+
+    # Decode predictions if label_encoder exists
+    if label_encoder is not None:
+        y_pred = label_encoder.inverse_transform(y_pred_raw)
+    else:
+        y_pred = y_pred_raw
 
     # ── 4. Init W&B (optional) ──────────────────────────────────
     run = None
@@ -345,9 +350,9 @@ if __name__ == "__main__":
     result = run_evaluation(skip_shap=args.no_shap, from_csv=args.csv, use_wandb=not args.no_wandb)
 
     print(f"\n{'='*60}")
-    print(f"  Evaluation Complete!")
+    print("  Evaluation Complete!")
     print(f"{'='*60}")
-    print(f"  📄 Classification Report: report/classification_report.txt")
+    print("  📄 Classification Report: report/classification_report.txt")
     print(f"  📊 Confusion Matrix:      {result['confusion_matrix_path']}")
     if result["roc_curves_path"]:
         print(f"  📊 ROC Curves:            {result['roc_curves_path']}")

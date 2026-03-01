@@ -5,6 +5,7 @@ Tests for api/main.py — all routes, error handling, and Prometheus metrics.
 Uses the test_client fixture from conftest.py.
 """
 
+import pytest  # noqa: F401
 
 
 class TestRootEndpoint:

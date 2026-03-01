@@ -89,8 +89,8 @@ if "history" not in st.session_state:
 st.markdown("""
 <div class="main-header">
     <h1>📦 Logistics Delay Predictor</h1>
-    <p>Predict whether a shipment will arrive <b>Early</b>, <b>On-time</b>, or <b>Late</b> — powered by ML with SHAP explainability</p>
-</div>
+    <p>Predict whether a shipment will arrive <b>Early</b>,
+    <b>On-time</b>, or <b>Late</b> — powered by ML with SHAP explainability</p>
 """, unsafe_allow_html=True)
 
 
@@ -104,7 +104,7 @@ def check_api():
                 return True
         except Exception:
             pass
-        
+
         # If initializing, wait a bit
         if i < 4:
             with st.spinner(f"Waking up API... (Attempt {i+1}/5)"):
@@ -152,15 +152,18 @@ with st.sidebar:
     st.markdown("**📅 Date Features**")
     col_d1, col_d2 = st.columns(2)
     with col_d1:
-        order_dayofweek = st.selectbox("Order day", list(range(7)),
-                                        format_func=lambda x: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][x],
-                                        index=3)
+        day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        order_dayofweek = st.selectbox(
+            "Order day", list(range(7)),
+            format_func=lambda x: day_names[x],
+            index=3)
         order_month = st.selectbox("Order month", list(range(1, 13)), index=5)
         order_quarter = st.selectbox("Order quarter", [1, 2, 3, 4], index=1)
     with col_d2:
-        shipping_dayofweek = st.selectbox("Ship day", list(range(7)),
-                                           format_func=lambda x: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][x],
-                                           index=5)
+        shipping_dayofweek = st.selectbox(
+            "Ship day", list(range(7)),
+            format_func=lambda x: day_names[x],
+            index=5)
         shipping_month = st.selectbox("Ship month", list(range(1, 13)), index=5)
         shipping_lead_days = st.number_input("Lead days", value=3.5, step=0.5, min_value=0.0)
 
@@ -280,7 +283,7 @@ if predict_btn:
         # Donut / bar chart of class probabilities
         labels_list = list(confidence.keys())
         values_list = list(confidence.values())
-        colors_list = [color_map.get(l, "#888") for l in labels_list]
+        colors_list = [color_map.get(lbl, "#888") for lbl in labels_list]
 
         fig_conf = go.Figure(go.Bar(
             x=values_list,
@@ -351,13 +354,13 @@ if predict_btn:
                 <p style="opacity:0.65;margin-top:0.3rem">~{late_penalty_pct:.0%} of order value if delayed</p>
             </div>""", unsafe_allow_html=True)
         with bi_c2:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>💡 Recommendation</h4>
                 <p>Escalate to logistics team. Consider expedited shipping or route optimization to avoid delay.</p>
             </div>""", unsafe_allow_html=True)
         with bi_c3:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>🎯 Risk Level</h4>
                 <div class="amount" style="color:#ff5252">HIGH</div>
@@ -372,33 +375,33 @@ if predict_btn:
                 <p style="opacity:0.65;margin-top:0.3rem">Early delivery improves customer satisfaction</p>
             </div>""", unsafe_allow_html=True)
         with bi_c2:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>💡 Recommendation</h4>
                 <p>No action needed. Shipment is on track for early delivery. Consider notifying the customer.</p>
             </div>""", unsafe_allow_html=True)
         with bi_c3:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>🎯 Risk Level</h4>
                 <div class="amount" style="color:#00e676">LOW</div>
             </div>""", unsafe_allow_html=True)
     else:
         with bi_c1:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>📦 Status</h4>
                 <div class="amount" style="color:#00d2ff">ON TRACK</div>
                 <p style="opacity:0.65;margin-top:0.3rem">Shipment expected on time</p>
             </div>""", unsafe_allow_html=True)
         with bi_c2:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>💡 Recommendation</h4>
                 <p>Standard monitoring. No intervention required.</p>
             </div>""", unsafe_allow_html=True)
         with bi_c3:
-            st.markdown(f"""
+            st.markdown("""
             <div class="impact-box">
                 <h4>🎯 Risk Level</h4>
                 <div class="amount" style="color:#00d2ff">NORMAL</div>

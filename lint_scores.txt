@@ -1,0 +1,14 @@
+﻿============================================================
+  LINT SCORES — Logistics Delay MLOps
+  Generated: 2026-03-01
+============================================================
+
+── Flake8 Results ──────────────────────────────────────────
+Command: flake8 api/ src/ tests/ frontend/ --max-line-length=120
+Result:  0 errors, 0 warnings
+Status:  ✅ PASS
+
+── Pylint Results ──────────────────────────────────────────
+Command: pylint api src tests frontend --max-line-length=120
+Score:   9.11 / 10
+Status:  ✅ PASS

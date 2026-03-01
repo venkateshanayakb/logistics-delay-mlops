@@ -1,0 +1,59 @@
+
+Date: 12/02/26
+Max Marks: 15
+MTA-1 : Advance Analytics II
+
+Title:  ML Classification Pipeline with MLOps, API Serving, Monitoring, CI/CD and Deployment
+Objective Build a complete ML classification system based on the dataset provided. The solution must follow modern MLOps best practices and demonstrate the entire lifecycle from data versioning to client-value documentation.
+Mandatory Requirements (All must be implemented and documented)
+Data Layer
+Store the raw dataset in Neon Postgres (serverless PostgreSQL).
+Write Python scripts to load data from Postgres using psycopg2 / SQLAlchemy.
+Model Training & Experimentation
+Build a scikit-learn Pipeline (preprocessing + model).
+Perform hyperparameter tuning using BayesianSearch / GridSearchCV / RandomSearchCV.
+Track every experiment, metrics (Accuracy, F1, ROC-AUC, Precision-Recall), parameters, and model artifacts in Weights & Biases (W&B).
+Model Registry & Artifacts
+Save the best model, preprocessor, and pipeline as .joblib / .pkl.
+Log the final artifact to W&B.
+Backend API
+Build a FastAPI service with the following endpoints:
+• POST /predict – accepts JSON payload, returns prediction
+• GET /health
+• GET /metrics (for Prometheus)
+Use Pydantic models for request/response validation.
+API Testing
+Test all endpoints manually using Postman (include screenshots of successful & edge-case requests in the report).
+Containerization & Monitoring
+Dockerfile for the FastAPI backend.
+Run the container locally with Prometheus + Grafana.
+Expose /metrics and create at least 3 dashboards (request count, latency).
+Frontend
+Build an interactive UI using Streamlit that calls the FastAPI /predict endpoint.
+Include input form and prediction display
+Testing & Code Quality
+Write unit tests using pytest (at least 5 tests covering data validation, model inference, API endpoints).
+Run Flake8 and Pylint; fix all warnings/errors (share final scores in a file).
+Version Control & CI/CD
+Push complete project to a public GitHub repository.
+Create two GitHub Actions workflows:
+• Backend: lint → test → deploy
+• Frontend: lint → test → deploy
+Both workflows must run on push to main.
+Deployment
+Deploy the FastAPI backend to Render.
+Deploy the Streamlit frontend to Render
+Provide live URLs in the final report.
+Documentation & Business Value
+Write a detailed README.md + 8–10 page report covering:
+Pipeline diagram
+W&B screenshots
+Model performance (best Hyperparameters & metrics)
+How the prediction model creates business value for the client
+Include a 5-minute recorded demo video
+Deliverables (Submit as one GitHub repo link + PDF report)
+GitHub repository (with all code,  .github/workflows, Dockerfile, requirements.txt, DVC files, W&B project link)
+Live URLs (FastAPI + Streamlit)
+Report + demo video
+
+

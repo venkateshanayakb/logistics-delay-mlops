@@ -30,6 +30,7 @@ class ModelService:
         self.numeric_cols: list[str] = []
         self.categorical_cols: list[str] = []
         self.label_map: dict = LABEL_MAP
+        self.label_encoder = None  # LabelEncoder for decoding predictions
         self._loaded = False
         self._shap_explainer = None
         self.load_time: float = 0.0
@@ -54,6 +55,7 @@ class ModelService:
         self.numeric_cols = artifact.get("numeric_cols", [])
         self.categorical_cols = artifact.get("categorical_cols", [])
         self.label_map = artifact.get("label_map", LABEL_MAP)
+        self.label_encoder = artifact.get("label_encoder", None)
         self._loaded = True
 
         self.load_time = time.time() - start
@@ -88,7 +90,14 @@ class ModelService:
         X_processed = self.preprocessor.transform(df)
 
         # Predict
-        label = int(self.model.predict(X_processed)[0])
+        raw_label = int(self.model.predict(X_processed)[0])
+
+        # Decode label if label_encoder exists (for XGBoost compat)
+        if self.label_encoder is not None:
+            label = int(self.label_encoder.inverse_transform([raw_label])[0])
+        else:
+            label = raw_label
+
         class_name = self.label_map.get(label, str(label))
 
         # Probabilities
@@ -97,10 +106,13 @@ class ModelService:
         if hasattr(self.model, "predict_proba"):
             proba = self.model.predict_proba(X_processed)[0]
             classes = self.model.classes_
-            probabilities = {
-                self.label_map.get(int(c), str(c)): round(float(p), 4)
-                for c, p in zip(classes, proba)
-            }
+            for c, p in zip(classes, proba):
+                # Decode class label if encoder exists
+                if self.label_encoder is not None:
+                    orig_label = int(self.label_encoder.inverse_transform([int(c)])[0])
+                else:
+                    orig_label = int(c)
+                probabilities[self.label_map.get(orig_label, str(orig_label))] = round(float(p), 4)
             max_conf = round(float(proba.max()), 4)
 
         # SHAP explanation (best-effort)
