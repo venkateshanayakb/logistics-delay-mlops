@@ -115,16 +115,26 @@ def mock_model_artifact(sample_dataframe):
     """
     Build a real (tiny) preprocessor + RandomForest, fit on sample data,
     and return the artifact dict that ModelService.load_model() expects.
+    Uses only base features (matching PredictionRequest schema).
     """
-    from src.preprocessing import engineer_features, get_feature_columns, build_preprocessor
+    from src.preprocessing import build_preprocessor
 
-    df = engineer_features(sample_dataframe)
-    numeric_cols, categorical_cols = get_feature_columns(df)
+    # Use base features only (no engineer_features) to match API input
+    numeric_cols = NUMERIC_FEATURES
+    categorical_cols = CATEGORICAL_FEATURES
     feature_names = numeric_cols + categorical_cols
-    X = df[feature_names]
+
+    # Build a simple dataframe with just the base features
+    df = sample_dataframe
+    X = df[feature_names] if all(c in df.columns for c in feature_names) else df[[
+        c for c in feature_names if c in df.columns
+    ]]
     y = df["label"]
 
-    preprocessor = build_preprocessor(numeric_cols, categorical_cols)
+    preprocessor = build_preprocessor(
+        [c for c in numeric_cols if c in X.columns],
+        [c for c in categorical_cols if c in X.columns],
+    )
     X_transformed = preprocessor.fit_transform(X)
 
     model = RandomForestClassifier(n_estimators=10, random_state=42)
@@ -134,9 +144,9 @@ def mock_model_artifact(sample_dataframe):
         "preprocessor": preprocessor,
         "model": model,
         "model_name": "test_rf",
-        "feature_names": feature_names,
-        "numeric_cols": numeric_cols,
-        "categorical_cols": categorical_cols,
+        "feature_names": [c for c in feature_names if c in X.columns],
+        "numeric_cols": [c for c in numeric_cols if c in X.columns],
+        "categorical_cols": [c for c in categorical_cols if c in X.columns],
         "label_map": {-1: "Early", 0: "On-time", 1: "Late"},
     }
 
@@ -170,15 +180,13 @@ def test_client(tmp_model_path_session):
 @pytest.fixture(scope="session")
 def tmp_model_path_session(tmp_path_factory):
     """Session-scoped version of tmp_model_path for use with test_client."""
-    from src.preprocessing import engineer_features, get_feature_columns, build_preprocessor
+    from src.preprocessing import build_preprocessor
 
-    # Build sample data
+    # Build sample data with base features only
     n = 50
     rng = np.random.RandomState(42)
     df = pd.DataFrame({
-        "order_date": pd.date_range("2024-01-01", periods=n, freq="D").astype(str),
-        "shipping_date": (pd.date_range("2024-01-01", periods=n, freq="D")
-                          + pd.Timedelta(days=3)).astype(str),
+        # Numeric features
         "profit_per_order": rng.uniform(10, 100, n),
         "sales_per_customer": rng.uniform(50, 500, n),
         "latitude": rng.uniform(-30, 50, n),
@@ -190,6 +198,15 @@ def tmp_model_path_session(tmp_path_factory):
         "order_item_quantity": rng.randint(1, 10, n),
         "sales": rng.uniform(50, 500, n),
         "product_price": rng.uniform(20, 300, n),
+        "order_dayofweek": rng.randint(0, 7, n),
+        "order_month": rng.randint(1, 13, n),
+        "order_quarter": rng.randint(1, 5, n),
+        "shipping_dayofweek": rng.randint(0, 7, n),
+        "shipping_month": rng.randint(1, 13, n),
+        "shipping_lead_days": rng.uniform(0, 10, n),
+        "discount_ratio": rng.uniform(0, 0.5, n),
+        "profit_margin": rng.uniform(-0.5, 0.5, n),
+        # Categorical features
         "payment_type": rng.choice(["DEBIT", "TRANSFER", "PAYMENT", "CASH"], n),
         "category_name": rng.choice(["Cleats", "Cardio", "Fishing"], n),
         "customer_country": rng.choice(["EE. UU.", "France", "Germany"], n),
@@ -199,13 +216,12 @@ def tmp_model_path_session(tmp_path_factory):
         "order_region": rng.choice(["Central America", "Western Europe"], n),
         "order_status": rng.choice(["COMPLETE", "CLOSED", "PENDING"], n),
         "shipping_mode": rng.choice(["Standard Class", "First Class", "Same Day"], n),
-        "customer_id": range(n),
-        "order_id": range(n),
+        # Target
         "label": rng.choice([-1, 0, 1], n),
     })
 
-    df = engineer_features(df)
-    numeric_cols, categorical_cols = get_feature_columns(df)
+    numeric_cols = NUMERIC_FEATURES
+    categorical_cols = CATEGORICAL_FEATURES
     feature_names = numeric_cols + categorical_cols
     X = df[feature_names]
     y = df["label"]
