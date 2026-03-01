@@ -83,8 +83,10 @@ class ModelService:
         if not self._loaded:
             raise RuntimeError("Model not loaded — call load_model() first")
 
-        # Build DataFrame in the exact feature order the preprocessor expects
-        df = pd.DataFrame([input_data])[self.feature_names]
+        # Build DataFrame and apply the same feature engineering used in training
+        df = pd.DataFrame([input_data])
+        df = self._engineer_features(df)
+        df = df[self.feature_names]
 
         # Preprocess
         X_processed = self.preprocessor.transform(df)
@@ -120,11 +122,54 @@ class ModelService:
 
         return {
             "label": label,
+
             "class_name": class_name,
             "confidence": probabilities,
             "max_confidence": max_conf,
             "top_features": top_features,
         }
+
+    # ── Feature Engineering (mirrors src/preprocessing.engineer_features) ──
+    @staticmethod
+    def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply the same feature engineering that was used during training.
+        Only the runtime-derivable features (no raw date parsing needed
+        since the API schema already provides date-derived fields).
+        """
+        df = df.copy()
+
+        # Interaction features
+        if "order_item_product_price" in df.columns and "order_item_quantity" in df.columns:
+            df["price_x_quantity"] = df["order_item_product_price"] * df["order_item_quantity"]
+
+        if "order_item_discount" in df.columns and "order_item_quantity" in df.columns:
+            df["discount_x_quantity"] = df["order_item_discount"] * df["order_item_quantity"]
+
+        if "sales" in df.columns and "product_price" in df.columns:
+            df["sales_to_price_ratio"] = df["sales"] / df["product_price"].replace(0, np.nan)
+
+        # Weekend flags
+        if "order_dayofweek" in df.columns:
+            df["is_weekend_order"] = (df["order_dayofweek"] >= 5).astype(int)
+
+        if "shipping_dayofweek" in df.columns:
+            df["is_weekend_ship"] = (df["shipping_dayofweek"] >= 5).astype(int)
+
+        # Shipping speed index
+        if "sales" in df.columns and "shipping_lead_days" in df.columns:
+            df["shipping_speed_index"] = df["sales"] / df["shipping_lead_days"].replace(0, np.nan)
+
+        # High discount flag
+        if "order_item_discount_rate" in df.columns:
+            df["high_discount_flag"] = (df["order_item_discount_rate"] > 0.15).astype(int)
+
+        # Log transforms for skewed numerics
+        for col in ["sales", "product_price", "sales_per_customer", "profit_per_order"]:
+            if col in df.columns:
+                df[f"{col}_log"] = np.log1p(df[col].clip(lower=0))
+
+        return df
 
     # ── SHAP ─────────────────────────────────────────────────────
     def _get_shap_explainer(self):
