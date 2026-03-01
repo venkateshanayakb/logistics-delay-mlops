@@ -241,7 +241,7 @@ if predict_btn:
     with st.spinner("Predicting..."):
         start = time.time()
         try:
-            resp = requests.post(f"{API_URL}/predict", json=payload, timeout=15)
+            resp = requests.post(f"{API_URL}/predict", json=payload, timeout=45)
             latency = time.time() - start
             resp.raise_for_status()
             result = resp.json()
