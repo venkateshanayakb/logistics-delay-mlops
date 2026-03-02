@@ -1,7 +1,7 @@
 # 📦 Logistics Delay Prediction — MLOps Pipeline
 
-[![Backend CI](https://github.com/YOUR_USERNAME/logistics-delay-mlops/actions/workflows/backend.yml/badge.svg)](https://github.com/YOUR_USERNAME/logistics-delay-mlops/actions)
-[![Frontend CI](https://github.com/YOUR_USERNAME/logistics-delay-mlops/actions/workflows/frontend.yml/badge.svg)](https://github.com/YOUR_USERNAME/logistics-delay-mlops/actions)
+[![Backend CI](https://github.com/venkateshanayakb/logistics-delay-mlops/actions/workflows/backend.yml/badge.svg)](https://github.com/venkateshanayakb/logistics-delay-mlops/actions/workflows/backend.yml)
+[![Frontend CI](https://github.com/venkateshanayakb/logistics-delay-mlops/actions/workflows/frontend.yml/badge.svg)](https://github.com/venkateshanayakb/logistics-delay-mlops/actions/workflows/frontend.yml)
 
 > End-to-end ML classification system that predicts whether a logistics shipment will arrive **Early**, **On-time**, or **Late**. Built with modern MLOps best practices — from data versioning to monitoring and deployment.
 
@@ -119,7 +119,7 @@ logistics-delay-mlops/
 ### Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/logistics-delay-mlops.git
+git clone https://github.com/venkateshanayakb/logistics-delay-mlops.git
 cd logistics-delay-mlops
 python -m venv .venv
 .venv/Scripts/activate  # Windows
@@ -235,7 +235,7 @@ All training experiments are tracked in **Weights & Biases**:
 - Model artifacts (`.joblib`)
 - Classification reports and plots
 
-W&B Project: [logistics-delay-mlops](https://wandb.ai/)
+W&B Project: [logistics-delay-mlops](https://wandb.ai/venkateshnayak-iihmr-bangalore/logistics-delay-mlops)
 
 ---
 
@@ -252,8 +252,12 @@ Prometheus scrapes `/metrics` endpoint every 15 seconds.
 
 ## 🚢 Deployment
 
-- **Backend**: Deployed to [Render](https://render.com) as a Docker web service
-- **Frontend**: Deployed to [Render](https://render.com) as a Streamlit app
+| Service | URL |
+|---------|-----|
+| **Backend API** | [logistics-api-yjjb.onrender.com](https://logistics-api-yjjb.onrender.com) |
+| **Frontend** | [logistics-frontend-4x43.onrender.com](https://logistics-frontend-4x43.onrender.com/) |
+| **API Docs (Swagger)** | [logistics-api-yjjb.onrender.com/docs](https://logistics-api-yjjb.onrender.com/docs) |
+
 - **CI/CD**: GitHub Actions — lint → test → deploy on push to `main`
 
 ---
@@ -281,12 +285,12 @@ This ML system predicts shipment delays **before** they happen, enabling:
 
 ## 📋 CI/CD Workflows
 
-### Backend (`backend.yml`)
+### Backend ([`backend.yml`](https://github.com/venkateshanayakb/logistics-delay-mlops/actions/workflows/backend.yml))
 ```
 Push to main → Lint (flake8) → Test (pytest) → Deploy (Render)
 ```
 
-### Frontend (`frontend.yml`)
+### Frontend ([`frontend.yml`](https://github.com/venkateshanayakb/logistics-delay-mlops/actions/workflows/frontend.yml))
 ```
 Push to main → Lint (flake8) → Syntax check → Deploy (Render)
 ```
