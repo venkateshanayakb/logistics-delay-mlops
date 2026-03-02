@@ -96,11 +96,11 @@ st.markdown("""
 
 # ── API health check ────────────────────────────────────────────
 def check_api():
-    """Check API health with retries for Render cold starts (up to ~2 min)."""
-    max_retries = 12  # 12 retries × 10s timeout + 5s sleep = ~3 min max
+    """Check API health with retries for Render cold starts (up to ~7 min)."""
+    max_retries = 12  # 12 retries × 30s timeout + 5s sleep = ~7 min max
     for i in range(max_retries):
         try:
-            r = requests.get(f"{API_URL}/health", timeout=10)
+            r = requests.get(f"{API_URL}/health", timeout=30)
             if r.status_code == 200:
                 data = r.json()
                 if data.get("model_loaded", False):
