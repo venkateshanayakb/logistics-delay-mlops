@@ -138,71 +138,92 @@ if not api_live:
     st.stop()
 
 
-# ── Sidebar: Input Form ─────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### 🛒 Shipment Details")
-    st.markdown("---")
+# ── Input Form ──────────────────────────────────────────────────
+st.markdown("### � Enter Shipment Details")
 
-    # ── Order & Financial ────────────────────────────────────────
-    st.markdown("**💰 Financial**")
-    profit_per_order = st.number_input("Profit per order ($)", value=50.0, step=5.0)
-    sales_per_customer = st.number_input("Sales per customer ($)", value=200.0, step=10.0)
-    sales = st.number_input("Sale amount ($)", value=200.0, step=10.0)
-    product_price = st.number_input("Product price ($)", value=100.0, step=5.0)
-    order_item_product_price = st.number_input("Item price ($)", value=100.0, step=5.0)
-    order_item_quantity = st.number_input("Quantity", value=2, min_value=1, step=1)
+with st.container(border=True):
+    t_fin, t_loc, t_cat = st.tabs(["💰 Financial & Discounts", "📅 Dates & Location", "📋 Categories & Status"])
 
-    st.markdown("---")
-    st.markdown("**🏷️ Discounts & Profit**")
-    order_item_discount = st.number_input("Discount ($)", value=10.0, step=1.0)
-    order_item_discount_rate = st.slider("Discount rate", 0.0, 1.0, 0.05, 0.01)
-    order_item_profit_ratio = st.slider("Profit ratio", -1.0, 1.0, 0.25, 0.01)
-    discount_ratio = st.number_input("Discount / Price ratio", value=0.1, step=0.01, format="%.3f")
-    profit_margin = st.number_input("Profit margin", value=0.25, step=0.01, format="%.3f")
+    with t_fin:
+        st.markdown("**Order Financials**")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            sales = st.number_input("Sale amount ($)", value=200.0, step=10.0)
+            order_item_quantity = st.number_input("Quantity", value=2, min_value=1, step=1)
+        with c2:
+            sales_per_customer = st.number_input("Sales per customer ($)", value=200.0, step=10.0)
+            profit_per_order = st.number_input("Profit per order ($)", value=50.0, step=5.0)
+        with c3:
+            product_price = st.number_input("Product price ($)", value=100.0, step=5.0)
+            order_item_product_price = st.number_input("Item price ($)", value=100.0, step=5.0)
+        with c4:
+            profit_margin = st.number_input("Profit margin", value=0.25, step=0.01, format="%.3f")
 
-    st.markdown("---")
-    st.markdown("**📍 Location**")
-    latitude = st.number_input("Latitude", value=28.6, step=0.1, format="%.4f")
-    longitude = st.number_input("Longitude", value=77.2, step=0.1, format="%.4f")
+        st.divider()
+        st.markdown("**Discounts & Ratios**")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            order_item_discount = st.number_input("Discount ($)", value=10.0, step=1.0)
+        with c2:
+            order_item_discount_rate = st.slider("Discount rate", 0.0, 1.0, 0.05, 0.01)
+        with c3:
+            discount_ratio = st.number_input("Discount / Price ratio", value=0.1, step=0.01, format="%.3f")
+        with c4:
+            order_item_profit_ratio = st.slider("Profit ratio", -1.0, 1.0, 0.25, 0.01)
 
-    st.markdown("---")
-    st.markdown("**📅 Date Features**")
-    col_d1, col_d2 = st.columns(2)
-    with col_d1:
+    with t_loc:
+        st.markdown("**Timeline Details**")
         day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        order_dayofweek = st.selectbox(
-            "Order day", list(range(7)),
-            format_func=lambda x: day_names[x],
-            index=3)
-        order_month = st.selectbox("Order month", list(range(1, 13)), index=5)
-        order_quarter = st.selectbox("Order quarter", [1, 2, 3, 4], index=1)
-    with col_d2:
-        shipping_dayofweek = st.selectbox(
-            "Ship day", list(range(7)),
-            format_func=lambda x: day_names[x],
-            index=5)
-        shipping_month = st.selectbox("Ship month", list(range(1, 13)), index=5)
-        shipping_lead_days = st.number_input("Lead days", value=3.5, step=0.5, min_value=0.0)
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            order_dayofweek = st.selectbox("Order day", list(range(7)), format_func=lambda x: day_names[x], index=3)
+            shipping_dayofweek = st.selectbox("Ship day", list(range(7)), format_func=lambda x: day_names[x], index=5)
+        with c2:
+            order_month = st.selectbox("Order month", list(range(1, 13)), index=5)
+            shipping_month = st.selectbox("Ship month", list(range(1, 13)), index=5)
+        with c3:
+            order_quarter = st.selectbox("Order quarter", [1, 2, 3, 4], index=1)
+            shipping_lead_days = st.number_input("Lead days", value=3.5, step=0.5, min_value=0.0)
 
-    st.markdown("---")
-    st.markdown("**📋 Categories**")
-    payment_type = st.selectbox("Payment", ["DEBIT", "TRANSFER", "CASH", "PAYMENT"])
-    category_name = st.text_input("Category", value="Cleats")
-    customer_country = st.text_input("Country", value="EE. UU.")
-    customer_segment = st.selectbox("Segment", ["Consumer", "Corporate", "Home Office"])
-    department_name = st.text_input("Department", value="Fan Shop")
-    market = st.selectbox("Market", ["LATAM", "Europe", "Pacific Asia", "USCA", "Africa"])
-    order_region = st.text_input("Region", value="Central America")
-    order_status = st.selectbox("Order status", [
-        "COMPLETE", "CLOSED", "PENDING", "PENDING_PAYMENT",
-        "SUSPECTED_FRAUD", "CANCELED", "ON_HOLD",
-    ])
-    shipping_mode = st.selectbox("Shipping mode", [
-        "Standard Class", "Second Class", "First Class", "Same Day",
-    ])
+        st.divider()
+        st.markdown("**Geographic Location**")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            latitude = st.number_input("Latitude", value=28.6, step=0.1, format="%.4f")
+        with c2:
+            longitude = st.number_input("Longitude", value=77.2, step=0.1, format="%.4f")
 
-    st.markdown("---")
-    predict_btn = st.button("🚀 Predict Delay", use_container_width=True, type="primary")
+    with t_cat:
+        st.markdown("**Product Categorization**")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            department_name = st.text_input("Department", value="Fan Shop")
+            category_name = st.text_input("Category", value="Cleats")
+        with c2:
+            customer_segment = st.selectbox("Segment", ["Consumer", "Corporate", "Home Office"])
+            payment_type = st.selectbox("Payment", ["DEBIT", "TRANSFER", "CASH", "PAYMENT"])
+        with c3:
+            market = st.selectbox("Market", ["LATAM", "Europe", "Pacific Asia", "USCA", "Africa"])
+            order_region = st.text_input("Region", value="Central America")
+
+        st.divider()
+        st.markdown("**Order Status & Logistics**")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            customer_country = st.text_input("Country", value="EE. UU.")
+        with c2:
+            order_status = st.selectbox("Order status", [
+                "COMPLETE", "CLOSED", "PENDING", "PENDING_PAYMENT",
+                "SUSPECTED_FRAUD", "CANCELED", "ON_HOLD",
+            ])
+        with c3:
+            shipping_mode = st.selectbox("Shipping mode", [
+                "Standard Class", "Second Class", "First Class", "Same Day",
+            ])
+
+st.markdown("<br>", unsafe_allow_html=True)
+predict_btn = st.button("🚀 Predict Delay", use_container_width=True, type="primary")
+st.markdown("<hr>", unsafe_allow_html=True)
 
 
 # ── Prediction Logic ────────────────────────────────────────────
