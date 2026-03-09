@@ -1,0 +1,121 @@
+================================================================================
+  MTA-1 AUDIT — Advance Analytics II
+  Updated: 2026-03-09
+  Status Legend:  ✅ DONE  |  ⚠️ PARTIAL  |  ❌ PENDING
+================================================================================
+
+1. DATA LAYER                                                            ✅ DONE
+   ✅ Raw dataset stored in Neon Postgres (serverless PostgreSQL)
+   ✅ Local CSV present (data/Logistics Delay.csv — 6.2 MB)
+   ✅ Python scripts to load data using SQLAlchemy (src/data_loader.py)
+
+2. MODEL TRAINING & EXPERIMENTATION                                      ✅ DONE
+   ✅ scikit-learn-compatible Pipeline (preprocessing + LightGBM model)
+   ✅ Hyperparameter tuning (RandomizedSearchCV + BayesSearchCV)
+   ✅ W&B experiment tracking (metrics, parameters logged in src/train.py)
+   ✅ Feature engineering & preprocessing pipeline (src/preprocessing.py)
+   ✅ Evaluation plots, SHAP, W&B logging (src/evaluate.py)
+
+3. MODEL REGISTRY & ARTIFACTS                                            ✅ DONE
+   ✅ Best model + preprocessor saved as .joblib (models/best_pipeline.joblib — 10.8 MB)
+   ✅ Final artifact logged to W&B (wandb.Artifact in src/train.py)
+
+4. BACKEND API                                                           ✅ DONE
+   ✅ FastAPI service (api/main.py)
+   ✅ POST /predict — JSON payload → prediction
+   ✅ GET /health — model status + uptime
+   ✅ GET /metrics — Prometheus-compatible
+   ✅ Pydantic models for request/response (api/schemas.py)
+   ✅ Model loading + SHAP explainability (api/model_service.py)
+
+5. API TESTING (Postman)                                                 ✅ DONE
+   ✅ Postman screenshots (report/postman_predict.png, postman_response.png)
+   ✅ Edge-case: Validation error / 422 (report/Validation Error (422 Error).png)
+   ✅ Edge-case: Model not loaded / 503 (report/503 Response.png)
+
+6. CONTAINERIZATION & MONITORING                                         ✅ DONE
+   ✅ Dockerfile for FastAPI backend
+   ✅ docker-compose.yml with Prometheus + Grafana (monitoring/)
+   ✅ /metrics endpoint exposed
+   ✅ 3 dashboards configured (request count, latency, confidence)
+      (monitoring/grafana/dashboards/logistics_mlops.json)
+   ✅ Prometheus scrape config (monitoring/prometheus.yml)
+
+7. FRONTEND                                                              ✅ DONE
+   ✅ Streamlit UI (frontend/app.py) calling /predict
+   ✅ Input form + prediction display with SHAP explainability
+
+8. TESTING & CODE QUALITY                                                ✅ DONE
+   ✅ 5 pytest test modules (test_api, test_data_validation, test_model,
+      test_preprocessing, test_integration)
+   ✅ Shared fixtures in tests/conftest.py
+   ✅ Flake8: 0 errors, 0 warnings
+   ✅ Pylint: 9.11/10
+   ✅ Final scores saved in lint_scores.txt
+
+9. VERSION CONTROL & CI/CD                                               ✅ DONE
+   ✅ Public GitHub repo: github.com/venkateshanayakb/logistics-delay-mlops
+   ✅ Backend workflow: .github/workflows/backend.yml (lint → test → deploy)
+   ✅ Frontend workflow: .github/workflows/frontend.yml (lint → deploy)
+   ✅ Docker workflow: .github/workflows/docker.yml (build & push)
+   ✅ All workflows trigger on push to main
+
+10. DEPLOYMENT                                                           ✅ DONE
+    ✅ FastAPI backend on Render (logistics-api-yjjb.onrender.com)
+    ✅ Streamlit frontend on Render (logistics-frontend-4x43.onrender.com)
+    ✅ Live URLs documented in README.md
+    ✅ render.yaml deployment config present
+
+11. DOCUMENTATION & BUSINESS VALUE                                       ⚠️ PARTIAL
+    ✅ Detailed README.md (pipeline diagram, model performance, business value)
+    ✅ Report document created (MTA1_Advance Analytics II.docx — 56 KB)
+    ✅ Model performance visualizations in report/:
+       - classification_report.txt
+       - confusion_matrix.png
+       - roc_curves.png
+       - shap_summary.png, shap_bar.png
+    ❌ PENDING: 5-minute recorded demo video showing the full pipeline
+
+12. DELIVERABLES                                                         ⚠️ PARTIAL
+    ✅ GitHub repository with all code, workflows, Dockerfile, requirements.txt
+    ✅ W&B project link in README
+    ✅ Live URLs (FastAPI + Streamlit) in README
+    ✅ DVC files tracked (data/Logistics Delay.csv.dvc)
+    ✅ Postman edge-case screenshots in report/
+    ✅ MTA1 report document (docx)
+    ❌ PENDING: Demo video submission
+
+================================================================================
+  COMPLETION SCORECARD
+================================================================================
+
+  Component                        Status      Notes
+  ─────────────────────────────    ────────    ──────────────────────────────
+  Data Layer                       ✅ DONE
+  Model Training                   ✅ DONE
+  Model Registry                   ✅ DONE
+  Backend API                      ✅ DONE
+  API Testing (Postman)            ✅ DONE     Edge-case screenshots added
+  Containerization & Monitoring    ✅ DONE
+  Frontend                         ✅ DONE
+  Testing & Code Quality           ✅ DONE     Flake8: 0 | Pylint: 9.11/10
+  CI/CD                            ✅ DONE     3 workflows (backend, frontend, docker)
+  Deployment                       ✅ DONE     Live on Render
+  Documentation                    ⚠️ PARTIAL  Missing: demo video
+  Deliverables                     ⚠️ PARTIAL  Missing: demo video
+
+  Overall Progress: 10/12 items DONE  |  2/12 PARTIAL (video pending)
+
+================================================================================
+  REMAINING TASK
+================================================================================
+
+  1. [VIDEO] Record a 5-minute demo video covering:
+     - Project overview & repo walkthrough
+     - Training pipeline execution
+     - W&B experiment tracking dashboard
+     - FastAPI backend (Swagger UI demo)
+     - Streamlit frontend (live prediction demo)
+     - Monitoring stack (Prometheus + Grafana dashboards)
+
+================================================================================
