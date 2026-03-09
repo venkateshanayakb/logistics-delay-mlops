@@ -58,7 +58,7 @@ Found via 2-phase tuning: **RandomizedSearchCV** (15 iterations, 3-fold CV) → 
 | Accuracy | 0.57 |
 | F1 (macro) | 0.51 |
 | ROC-AUC (macro, OVR) | ~0.73 |
-| Training time | ~5 min |
+| Training time | ~3 min |
 
 ---
 
@@ -217,17 +217,15 @@ pylint api src tests frontend
 - **Flake8**: 0 errors, 0 warnings ✅
 - **Pylint**: 9.11/10 ✅
 
-Full scores saved in [`lint_scores.txt`](lint_scores.txt).
-
 ---
 
 ## 📈 W&B Experiment Tracking
 
 All training experiments are tracked in **Weights & Biases**:
-- Accuracy, F1 (macro/weighted), ROC-AUC, Precision, Recall
-- Hyperparameters for each model
-- Model artifacts (`.joblib`)
-- Classification reports and plots
+- **Metrics**: Accuracy, F1 (macro/weighted), ROC-AUC, Precision, Recall
+- **Hyperparameters**: Search curves for RandomizedSearchCV & BayesSearchCV
+- **Interactive Charts**: Confusion matrix heatmap, per-class F1 bar charts, model comparison tables
+- **Model artifacts**: Best model saved as `.joblib`
 
 W&B Project: [logistics-delay-mlops](https://wandb.ai/venkateshnayak-iihmr-bangalore/logistics-delay-mlops)
 
