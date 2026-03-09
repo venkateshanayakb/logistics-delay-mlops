@@ -14,6 +14,7 @@ build/
 
 # Model artifacts
 models/*.joblib
+!models/best_pipeline.joblib
 models/*.pkl
 
 # IDE
