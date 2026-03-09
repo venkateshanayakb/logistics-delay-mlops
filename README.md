@@ -68,7 +68,8 @@ Found via 2-phase tuning: **RandomizedSearchCV** (15 iterations, 3-fold CV) → 
 logistics-delay-mlops/
 ├── .github/workflows/
 │   ├── backend.yml          # Backend CI: lint → test → deploy
-│   └── frontend.yml         # Frontend CI: lint → deploy
+│   ├── frontend.yml         # Frontend CI: lint → deploy
+│   └── docker.yml           # Docker CI: build & push image
 ├── api/
 │   ├── main.py              # FastAPI app (POST /predict, GET /health, GET /metrics)
 │   ├── model_service.py     # Model loading, inference, SHAP explainability
@@ -83,12 +84,6 @@ logistics-delay-mlops/
 │   ├── docker-compose.yml   # Prometheus + Grafana stack
 │   ├── prometheus.yml       # Prometheus scrape config
 │   └── grafana/             # Dashboard provisioning + JSON
-├── report/
-│   ├── classification_report.txt
-│   ├── confusion_matrix.png
-│   ├── roc_curves.png
-│   ├── shap_summary.png
-│   └── shap_bar.png
 ├── src/
 │   ├── data_loader.py       # Load data from Neon Postgres
 │   ├── preprocessing.py     # Feature engineering + ColumnTransformer
@@ -103,7 +98,6 @@ logistics-delay-mlops/
 │   └── test_preprocessing.py
 ├── Dockerfile               # Multi-stage Docker build for FastAPI
 ├── requirements.txt
-├── lint_scores.txt          # Flake8 (0 errors) + Pylint (9.11/10)
 └── README.md
 ```
 
