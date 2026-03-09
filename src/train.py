@@ -21,6 +21,7 @@ import logging
 import warnings
 
 import joblib
+import numpy as np
 import pandas as pd
 import wandb
 from dotenv import load_dotenv
@@ -28,6 +29,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
+    confusion_matrix,
     f1_score,
     precision_score,
     recall_score,
@@ -307,13 +309,27 @@ def run_training(quick: bool = False, from_csv: bool = False, use_wandb: bool = 
         logger.info(f"  Test Accuracy:   {metrics['accuracy']:.4f}")
         logger.info(f"  Time: {elapsed:.1f}s")
 
+        # ── Log per-iteration CV results to W&B (creates visible curves) ──
         if wandb.run is not None:
+            cv_results = search.cv_results_
+            for i in range(len(cv_results["mean_test_score"])):
+                wandb.log({
+                    f"{name}/cv_mean_f1": cv_results["mean_test_score"][i],
+                    f"{name}/cv_std_f1": cv_results["std_test_score"][i],
+                    f"{name}/cv_rank": int(cv_results["rank_test_score"][i]),
+                    f"{name}/iteration": i + 1,
+                })
+            # Also log the final best metrics
             wandb.log({
-                f"{name}/phase1_cv_f1": search.best_score_,
+                f"{name}/phase1_best_cv_f1": search.best_score_,
                 f"{name}/phase1_test_f1": metrics["f1_macro"],
-                f"{name}/phase1_accuracy": metrics["accuracy"],
+                f"{name}/phase1_test_accuracy": metrics["accuracy"],
+                f"{name}/phase1_test_precision": metrics["precision_macro"],
+                f"{name}/phase1_test_recall": metrics["recall_macro"],
                 f"{name}/phase1_time": elapsed,
             })
+            if metrics.get("roc_auc_ovr") is not None:
+                wandb.log({f"{name}/phase1_roc_auc": metrics["roc_auc_ovr"]})
 
         phase1_results.append({
             "name": name,
@@ -358,6 +374,22 @@ def run_training(quick: bool = False, from_csv: bool = False, use_wandb: bool = 
     logger.info(f"  Test Accuracy:     {final_metrics['accuracy']:.4f}")
     logger.info(f"  Fine-tune time:    {bayes_time:.1f}s")
 
+    # ── Log per-iteration BayesSearch results to W&B ──
+    if wandb.run is not None:
+        bayes_cv = bayes_search.cv_results_
+        for i in range(len(bayes_cv["mean_test_score"])):
+            wandb.log({
+                f"{winner['name']}/bayes_cv_f1_iter": bayes_cv["mean_test_score"][i],
+                f"{winner['name']}/bayes_std_f1_iter": bayes_cv["std_test_score"][i],
+                f"{winner['name']}/bayes_iteration": i + 1,
+            })
+        wandb.log({
+            f"{winner['name']}/bayes_best_cv_f1": bayes_search.best_score_,
+            f"{winner['name']}/bayes_test_f1": final_metrics["f1_macro"],
+            f"{winner['name']}/bayes_test_accuracy": final_metrics["accuracy"],
+            f"{winner['name']}/bayes_time": bayes_time,
+        })
+
     # Use fine-tuned model if it improved, otherwise keep phase1 winner
     if final_metrics["f1_macro"] >= winner["test_metrics"]["f1_macro"]:
         logger.info("  ✅ Fine-tuning improved metrics — using BayesSearch model")
@@ -374,13 +406,6 @@ def run_training(quick: bool = False, from_csv: bool = False, use_wandb: bool = 
     else:
         logger.info("  ℹ️  Fine-tuning did not improve — keeping Phase 1 model")
         best_result = winner
-
-    if wandb.run is not None:
-        wandb.log({
-            f"{winner['name']}/bayes_cv_f1": bayes_search.best_score_,
-            f"{winner['name']}/bayes_test_f1": final_metrics["f1_macro"],
-            f"{winner['name']}/bayes_time": bayes_time,
-        })
 
     # ── 6. Save & report ─────────────────────────────────────────
     logger.info("Step 6/6: Saving best model...")
@@ -414,13 +439,99 @@ def run_training(quick: bool = False, from_csv: bool = False, use_wandb: bool = 
     )
     logger.info(f"\n{report}")
 
-    # Log to W&B
+    # Log to W&B — rich visualizations
     if run is not None:
+        class_names = [LABEL_MAP[k] for k in sorted(LABEL_MAP.keys())]
+
+        try:
+            # ── Confusion Matrix heatmap ──
+            y_test_int = list(y_test_enc.values.astype(int))
+            y_pred_int = list(best_result["y_pred"].astype(int))
+            wandb.log({
+                "confusion_matrix": wandb.plot.confusion_matrix(
+                    probs=None,
+                    y_true=y_test_int,
+                    preds=y_pred_int,
+                    class_names=class_names,
+                ),
+            })
+        except Exception as e:
+            logger.warning(f"⚠️ Confusion matrix logging failed: {e}")
+
+        try:
+            # ── Per-class metrics bar chart (as a W&B Table) ──
+            y_test_labels = [LABEL_MAP[v] for v in label_encoder.inverse_transform(y_test_enc)]
+            y_pred_labels = [LABEL_MAP[v] for v in label_encoder.inverse_transform(best_result["y_pred"])]
+            per_class_report = classification_report(
+                y_test_labels, y_pred_labels,
+                target_names=class_names, output_dict=True,
+            )
+            metrics_table = wandb.Table(
+                columns=["Class", "Precision", "Recall", "F1-Score", "Support"],
+            )
+            for cls in class_names:
+                r = per_class_report[cls]
+                metrics_table.add_data(cls, r["precision"], r["recall"], r["f1-score"], r["support"])
+            wandb.log({
+                "per_class_metrics": metrics_table,
+                "per_class_f1_bar": wandb.plot.bar(
+                    wandb.Table(
+                        data=[[cls, per_class_report[cls]["f1-score"]] for cls in class_names],
+                        columns=["Class", "F1-Score"],
+                    ),
+                    "Class", "F1-Score", title="F1-Score by Class",
+                ),
+                "per_class_precision_bar": wandb.plot.bar(
+                    wandb.Table(
+                        data=[[cls, per_class_report[cls]["precision"]] for cls in class_names],
+                        columns=["Class", "Precision"],
+                    ),
+                    "Class", "Precision", title="Precision by Class",
+                ),
+                "per_class_recall_bar": wandb.plot.bar(
+                    wandb.Table(
+                        data=[[cls, per_class_report[cls]["recall"]] for cls in class_names],
+                        columns=["Class", "Recall"],
+                    ),
+                    "Class", "Recall", title="Recall by Class",
+                ),
+            })
+        except Exception as e:
+            logger.warning(f"⚠️ Per-class metrics logging failed: {e}")
+
+        try:
+            # ── Model comparison table ──
+            comparison_table = wandb.Table(
+                columns=["Model", "F1 (macro)", "Accuracy", "Precision", "Recall", "ROC-AUC", "Time (s)"],
+            )
+            for r in phase1_results:
+                m = r["test_metrics"]
+                comparison_table.add_data(
+                    r["name"], m["f1_macro"], m["accuracy"],
+                    m["precision_macro"], m["recall_macro"],
+                    m.get("roc_auc_ovr", 0), round(r["train_time"], 1),
+                )
+            wandb.log({
+                "model_comparison": comparison_table,
+                "model_f1_comparison": wandb.plot.bar(
+                    wandb.Table(
+                        data=[[r["name"], r["test_metrics"]["f1_macro"]] for r in phase1_results],
+                        columns=["Model", "F1 (macro)"],
+                    ),
+                    "Model", "F1 (macro)", title="Model F1 Comparison",
+                ),
+            })
+        except Exception as e:
+            logger.warning(f"⚠️ Model comparison logging failed: {e}")
+
+        # ── Summary metrics ──
         wandb.log({
             "best_model": best_result["name"],
             "best_f1_macro": best_result["test_metrics"]["f1_macro"],
             "best_accuracy": best_result["test_metrics"]["accuracy"],
         })
+
+        # ── Artifact ──
         artifact = wandb.Artifact(
             name="best-pipeline", type="model",
             description=f"Best: {best_result['name']} | F1: {best_result['test_metrics']['f1_macro']:.4f}",
