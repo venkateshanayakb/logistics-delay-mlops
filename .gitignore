@@ -24,16 +24,12 @@ models/*.pkl
 .DS_Store
 Thumbs.db
 
-# Temp / internal files
+# Temp files
 _temp_doc.txt
 _col_info.txt
 _pipeline_info.json
+lint_scores.txt
 mta1_text.txt
-audit.txt
-
-# Test artifacts
-.coverage
-.pytest_cache/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -41,5 +37,10 @@ audit.txt
 # W&B
 wandb/
 
-# DVC
-/data/*.csv
+# Testing & Coverage
+.coverage
+.pytest_cache/
+
+# Reports and auto-generated images
+report/
+*.docx
